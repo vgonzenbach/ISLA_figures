@@ -1,0 +1,133 @@
+Logfile for fslregister
+Tue Jan 12 08:26:46 CST 2021
+--s fsaverage --mov data/template/pnc_template_brain.nii.gz --reg data/transform/pnc_brain_reg.dat
+FreeSurferEnv.csh 7.1.1
+VirgilisMacBook.attlocal.net
+Darwin VirgilisMacBook.attlocal.net 18.7.0 Darwin Kernel Version 18.7.0: Tue Aug 20 16:57:14 PDT 2019; root:xnu-4903.271.2~2/RELEASE_X86_64 x86_64
+nIters 1
+--------------------------------------
+/Users/vgonzenb/PennSIVE/ISLA
+mri_convert /Applications/freesurfer/7.1.1/subjects/fsaverage/mri/brainmask.mgz data/template/tmp.fslregister.4396/refvol.fslregister.nii
+mri_convert /Applications/freesurfer/7.1.1/subjects/fsaverage/mri/brainmask.mgz data/template/tmp.fslregister.4396/refvol.fslregister.nii 
+reading from /Applications/freesurfer/7.1.1/subjects/fsaverage/mri/brainmask.mgz...
+TR=0.00, TE=0.00, TI=0.00, flip angle=0.00
+i_ras = (-1, 0, 0)
+j_ras = (0, 0, -1)
+k_ras = (0, 1, 0)
+writing to data/template/tmp.fslregister.4396/refvol.fslregister.nii...
+--------------------------------------
+/Users/vgonzenb/PennSIVE/ISLA
+mri_convert data/template/pnc_template_brain.nii.gz data/template/tmp.fslregister.4396/movvol.fslregister.nii --frame 0
+mri_convert data/template/pnc_template_brain.nii.gz data/template/tmp.fslregister.4396/movvol.fslregister.nii --frame 0 
+reading from data/template/pnc_template_brain.nii.gz...
+TR=0.00, TE=0.00, TI=0.00, flip angle=0.00
+i_ras = (-1, -0, 0)
+j_ras = (-0, 1, 0)
+k_ras = (0, -0, 1)
+keeping frame 0
+writing to data/template/tmp.fslregister.4396/movvol.fslregister.nii...
+Mov determinant is -0.878906
+/Users/vgonzenb/PennSIVE/ISLA
+tkregister2_cmdl --mov data/template/tmp.fslregister.4396/movvol.fslregister.nii --reg data/template/tmp.fslregister.4396/reg0.4396.dat --regheader --fslregout data/transform/pnc_brain_reg.dat.fsl.mat0 --s fsaverage --noedit
+INFO: no target volume specified, assuming FreeSurfer orig volume.
+target  volume orig
+movable volume data/template/tmp.fslregister.4396/movvol.fslregister.nii
+reg file       data/template/tmp.fslregister.4396/reg0.4396.dat
+LoadVol        0
+ZeroCRAS       0
+7.1.1
+Diagnostic Level -1
+INFO: loading target /Applications/freesurfer/7.1.1/subjects/fsaverage/mri/orig.mgz
+Ttarg: --------------------
+-1.00000   0.00000   0.00000   128.00000;
+ 0.00000   0.00000   1.00000  -128.00000;
+ 0.00000  -1.00000   0.00000   128.00000;
+ 0.00000   0.00000   0.00000   1.00000;
+INFO: loading movable data/template/tmp.fslregister.4396/movvol.fslregister.nii
+Tmov: --------------------
+-0.93750   0.00000   0.00000   94.68750;
+ 0.00000   0.00000   1.00000  -85.00000;
+ 0.00000  -0.93750   0.00000   124.68750;
+ 0.00000   0.00000   0.00000   1.00000;
+mkheaderreg = 1, float2int = 0
+Computing reg from header (and possibly input matrix)
+---- Input registration matrix (computed) --------
+ 1.00000   0.00000   0.00000  -1.21071;
+ 0.00000   0.00000   1.00000  -33.18770;
+ 0.00000  -1.00000   0.00000   2.75349;
+ 0.00000   0.00000   0.00000   1.00000;
+---------------------------------------
+---- Input registration matrix --------
+ 1.00000   0.00000   0.00000  -1.21071;
+ 0.00000   0.00000   1.00000  -33.18770;
+ 0.00000  -1.00000   0.00000   2.75349;
+ 0.00000   0.00000   0.00000   1.00000;
+Determinant 1
+subject = fsaverage
+RegMat ---------------------------
+ 1.00000   0.00000   0.00000  -1.21071;
+ 0.00000   0.00000   1.00000  -33.18770;
+ 0.00000  -1.00000   0.00000   2.75349;
+ 0.00000   0.00000   0.00000   1.00000;
+FSLOUTPUTTYPE NIFTI 
+tkreg2FSL: mov det = -0.878906, ref det = -1
+Tue Jan 12 08:26:49 CST 2021
+/Users/vgonzenb/PennSIVE/ISLA
+flirt.fsl -ref data/template/tmp.fslregister.4396/refvol.fslregister.nii -in data/template/tmp.fslregister.4396/movvol.fslregister.nii -bins 256 -cost corratio -dof 6 -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -verbose 0 -omat data/template/tmp.fslregister.4396/fslmat0.trans.mat -schedule /Applications/freesurfer/7.1.1/bin/fsl.5.0.2.xyztrans.sch -init data/transform/pnc_brain_reg.dat.fsl.mat0
+Tue Jan 12 08:27:49 CST 2021
+/Users/vgonzenb/PennSIVE/ISLA
+flirt.fsl -ref data/template/tmp.fslregister.4396/refvol.fslregister.nii -in data/template/tmp.fslregister.4396/movvol.fslregister.nii -bins 256 -cost corratio -dof 6 -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -verbose 0 -omat data/transform/pnc_brain_reg.dat.fsl.mat -init data/template/tmp.fslregister.4396/fslmat0.trans.mat -schedule /Applications/freesurfer/7.1.1/bin/flirt.newdefault.20080811.sch
+tkregister2_cmdl --s fsaverage --mov data/template/pnc_template_brain.nii.gz --reg data/transform/pnc_brain_reg.dat --fslreg data/transform/pnc_brain_reg.dat.fsl.mat --noedit
+---- FSL registration matrix --------
+ 0.99999  -0.00191  -0.00322   33.17084;
+-0.00304   0.08905  -0.99602   190.88002;
+ 0.00219   0.99603   0.08904  -28.79688;
+ 0.00000   0.00000   0.00000   1.00000;
+---------------------------------------
+INFO: no target volume specified, assuming FreeSurfer orig volume.
+target  volume orig
+movable volume data/template/pnc_template_brain.nii.gz
+reg file       data/transform/pnc_brain_reg.dat
+LoadVol        0
+ZeroCRAS       0
+7.1.1
+Diagnostic Level -1
+INFO: loading target /Applications/freesurfer/7.1.1/subjects/fsaverage/mri/orig.mgz
+Ttarg: --------------------
+-1.00000   0.00000   0.00000   128.00000;
+ 0.00000   0.00000   1.00000  -128.00000;
+ 0.00000  -1.00000   0.00000   128.00000;
+ 0.00000   0.00000   0.00000   1.00000;
+INFO: loading movable data/template/pnc_template_brain.nii.gz
+Tmov: --------------------
+-0.93750   0.00000   0.00000   94.68750;
+ 0.00000   0.00000   1.00000  -85.00000;
+ 0.00000  -0.93750   0.00000   124.68750;
+ 0.00000   0.00000   0.00000   1.00000;
+mkheaderreg = 0, float2int = 0
+FSLOUTPUTTYPE NIFTI 
+fsl2TkReg: mov det = -0.878906, ref det = -1
+---- Input registration matrix (computed) --------
+ 0.99999  -0.00219  -0.00304  -0.67572;
+ 0.00322   0.08904   0.99602  -8.71422;
+-0.00191  -0.99603   0.08905  -25.70554;
+ 0.00000   0.00000   0.00000   1.00000;
+---------------------------------------
+---- Input registration matrix --------
+ 0.99999  -0.00219  -0.00304  -0.67572;
+ 0.00322   0.08904   0.99602  -8.71422;
+-0.00191  -0.99603   0.08905  -25.70554;
+ 0.00000   0.00000   0.00000   1.00000;
+Determinant 1
+subject = fsaverage
+RegMat ---------------------------
+ 0.99999  -0.00219  -0.00304  -0.67572;
+ 0.00322   0.08904   0.99602  -8.71422;
+-0.00191  -0.99603   0.08905  -25.70554;
+ 0.00000   0.00000   0.00000   1.00000;
+Cleaning up
+ 
+Started at Tue Jan 12 08:26:46 CST 2021 
+Ended   at Tue Jan 12 08:29:06 CST 2021
+ 
+fslregister Done
