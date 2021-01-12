@@ -1,0 +1,155 @@
+---
+title: "Hex plots"
+author: "Virgilio Gonzenbach"
+date: "11/20/2020"
+output:
+  ioslides_presentation: default
+  beamer_presentation: default
+  slidy_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+```
+
+```{r, include=FALSE}
+library(oro.nifti)
+library(neurobase)
+library(dplyr)
+library(ggplot2)
+library(hexbin)
+library(fslr)
+
+#devtools::install_github('vgonzenbach/openair')
+library(openair)
+library(RColorBrewer)
+```
+
+## ggplot: hexplot 
+
+```{r load_data, include=FALSE}
+library(openair)
+#' load thr10 images -> 
+#' process all-, boundary-, inner-voxel images in different dataframes -> 
+#' repeat for thr20 images ->
+#' create factor with 6 levels: thr-by-voxelgroup -> add relevant factor to each
+
+## Threshold: 10 %
+# Original
+dat_10_orig = data.frame(gmd = as.vector(readnii("avg_images/avgGMD_CBF_thr10.nii.gz")), 
+                         cbf = as.vector(readnii("avg_images/avgCBF_thr10.nii.gz")))
+dat_10_orig$type = rep("10% all", nrow(dat_10_orig))
+
+# Inner voxels
+dat_10_inner = data.frame(gmd = as.vector(readnii(fsl_erode(file = "avg_images/avgGMD_CBF_thr10.nii.gz"))),
+                          cbf = as.vector(readnii(fsl_erode(file = "avg_images/avgCBF_thr10.nii.gz"))))
+dat_10_inner$type = rep("10% inner", nrow(dat_10_inner))
+
+# Boundary voxels
+dat_10_bound = data.frame(gmd = as.vector(readnii("avg_images/avgGMD_CBF_thr10.nii.gz") - readnii(fsl_erode(file = "avg_images/avgGMD_CBF_thr10.nii.gz"))),
+                          cbf = as.vector(readnii("avg_images/avgCBF_thr10.nii.gz") - readnii(fsl_erode(file = "avg_images/avgCBF_thr10.nii.gz"))))
+dat_10_bound$type = rep("10% boundary", nrow(dat_10_bound))
+
+## Threshold: 20 %
+# Original
+dat_20_orig = data.frame(gmd = as.vector(readnii("avg_images/avgGMD_CBF_thr20.nii.gz")), 
+                         cbf = as.vector(readnii("avg_images/avgCBF_thr20.nii.gz")))
+dat_20_orig$type = rep("20% all", nrow(dat_20_orig))
+
+# Inner voxels
+dat_20_inner = data.frame(gmd = as.vector(readnii(fsl_erode(file = "avg_images/avgGMD_CBF_thr20.nii.gz"))),
+                          cbf = as.vector(readnii(fsl_erode(file = "avg_images/avgCBF_thr20.nii.gz"))))
+dat_20_inner$type = rep("20% inner", nrow(dat_20_inner))
+
+# Boundary voxels
+dat_20_bound = data.frame(gmd = as.vector(readnii("avg_images/avgGMD_CBF_thr20.nii.gz") - readnii(fsl_erode(file = "avg_images/avgGMD_CBF_thr20.nii.gz"))),
+                          cbf = as.vector(readnii("avg_images/avgCBF_thr20.nii.gz") - readnii(fsl_erode(file = "avg_images/avgCBF_thr20.nii.gz"))))
+dat_20_bound$type = rep("20% boundary", nrow(dat_20_bound))
+
+## Merge all dataframes
+dat = rbind(dat_10_orig, dat_10_inner, dat_10_bound, dat_20_orig, dat_20_inner, dat_20_bound)
+dat$type = as.factor(dat$type)
+```
+
+## Hexplot 
+
+```{r}
+# hard colors
+scatterPlot(filter(dat, cbf > 0, gmd > 0), x="gmd", y="cbf", type = "type", method = "hexbin", 
+            xlab="Avg GMD", ylab="Avg CBF", xbin= 30, layout = c(3,2), col="jet")
+```
+
+## Observations and proportions
+
+Number of non-zero voxels in each image type:  
+```{r}
+dat %>% filter(cbf > 0, gmd > 0) %>% select(type) %>% table()
+```
+
+Proportion: highest count relative to total observation
+```{r}
+1145 /(dat %>% filter(cbf > 0, gmd > 0) %>% select(type) %>% table())
+```
+
+Proportion: highest count in 20% inner image
+```{r}
+475 /(dat %>% filter(cbf > 0, gmd > 0) %>% select(type) %>% table())
+```
+
+## Hexplot: xbin = 50
+
+```{r}
+# hard colors
+scatterPlot(filter(dat, cbf > 0, gmd > 0), x="gmd", y="cbf", type = "type", method = "hexbin", 
+            xlab="Avg GMD", ylab="Avg CBF", xbin= 50, layout = c(3,2), col="jet")
+```
+
+## Hexplot: xbin = 70
+
+```{r}
+# hard colors
+scatterPlot(filter(dat, cbf > 0, gmd > 0), x="gmd", y="cbf", type = "type", method = "hexbin", 
+            xlab="Avg GMD", ylab="Avg CBF", xbin= 70, layout = c(3,2), col="jet")
+```
+
+## Hexplot: soft color, xbin = 30
+```{r}
+#soft colors
+scatterPlot(filter(dat, cbf > 0, gmd > 0), x="gmd", y="cbf", type = "type", method = "hexbin", xlab="Avg GMD", ylab="Avg CBF", xbin= 30, layout = c(3,2), col=rev(brewer.pal(11,'Spectral')))
+```
+
+## Hexplot: soft color, x = 50
+```{r}
+#soft colors
+scatterPlot(filter(dat, cbf > 0, gmd > 0), x="gmd", y="cbf", type = "type", method = "hexbin", xlab="Avg GMD", ylab="Avg CBF", xbin= 50, layout = c(3,2), col=rev(brewer.pal(11,'Spectral')))
+```
+
+## Hexplot: soft color, x = 70
+```{r}
+#soft colors
+scatterPlot(filter(dat, cbf > 0, gmd > 0), x="gmd", y="cbf", type = "type", method = "hexbin", xlab="Avg GMD", ylab="Avg CBF", xbin= 70, layout = c(3,2), col=rev(brewer.pal(11,'Spectral')))
+```
+
+Next: edit package to 
+1. set count minimum to 10 in hexbinplot;
+2. labels reflect proportion not 
+3. contrain colors
+
+
+## GGplot version
+
+```{r}
+dat %>% filter(gmd > 0, cbf > 0) %>% ggplot(aes(x = gmd, y = cbf)) + geom_hex(bins = 30) + facet_wrap(~type) + scale_fill_distiller(palette = 'Spectral', aesthetics = 'fill')
+```
+
+
+
+
+
+
+
+
+
+
+
+
