@@ -1,0 +1,304 @@
+---
+title: "viz_stats_by_ROI.Rmd"
+author: "Virgilio Gonzenbach"
+date: "5/18/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache=TRUE, fig.width = 12, fig.height = 7)
+knitr::opts_knit$set(root.dir = '/home/vgonzenb/ISLA/')
+```
+
+```{r}
+ # Set to my library
+myPaths = c(.libPaths(), "/home/vgonzenb/R/x86_64-pc-linux-gnu-library/4.0")
+.libPaths(myPaths)
+library(ggplot2)
+library(dplyr)
+library(plyr)
+library(tidyr)
+library(stringr)
+library(ggthemes)
+library(gridExtra)
+library(stargazer)
+library(flextable)
+
+p_df = read.csv('results/frac_sigPs_by_ROI_adjBy10thr.csv')
+colnames(p_df)[1] = "METHOD"
+
+p_df_r2 = p_df[c(1, 5, 2), ]
+p_df_r2$METHOD = c("Raw", "Ahlgren", "ISLA")
+p_df_r2$METHOD = factor(p_df_r2$METHOD, levels=c("Raw", "Ahlgren", "ISLA"))
+
+p_df_r3 = p_df[c(1, 6, 3), ]
+p_df_r3$METHOD = c("Raw", "Ahlgren", "ISLA")
+p_df_r3$METHOD = factor(p_df_r3$METHOD, levels=c("Raw", "Ahlgren", "ISLA"))
+
+p_df_r4 = p_df[c(1, 7, 4), ]
+p_df_r4$METHOD = c("Raw", "Ahlgren", "ISLA")
+p_df_r4$METHOD = factor(p_df_r4$METHOD, levels=c("Raw", "Ahlgren", "ISLA"))
+
+roi_df = read.csv('results/frac_within_threshold_voxels_by_ROI.csv')
+dict = readxl::read_xlsx("data/MUSE_ROI_Dict.xlsx", 1)
+s_dict = dict[dict$ROI_INDEX %in% 2:300, ]
+s_dict$ROI_INDEX = paste0("X", s_dict$ROI_INDEX)
+
+jlf_dict = read.csv("data/jlf_lookup.csv")
+
+roi_class = readRDS('roi_class.rds')
+```
+
+## Examine ROIs
+
+Note: JLF parcellation consists of 135 labels while MUSE has 145 ROIs. TODO: Why is there a discrepancy?
+
+Which MUSE ROIs are not included in JLF parcellation? Most White Matter regions
+
+```{r, echo=TRUE, results='asis'}
+isInJLF = s_dict$ROI_INDEX %in% roi_df$X
+
+isInMUSE = roi_df$X %in% s_dict$ROI_INDEX 
+
+jlf_dict$ROI_INDEX == readr::parse_number(roi_df$X[!isInMUSE])
+
+isOnlyInJLF = jlf_dict$ROI_INDEX %in% readr::parse_number(roi_df$X[!isInMUSE])
+jlf_dict[isOnlyInJLF,] # TODO: Figure out what do with this
+
+index_tbl = s_dict[isInJLF, c("ROI_INDEX", "ROI_NAME")] 
+
+start = seq(1,130, by=26)
+end = start + 25
+
+index_tbl_cols = data.frame(index_tbl[start[1]:end[1],])
+for(i in 2:length(start)){
+  index_tbl_cols = data.frame(index_tbl_cols, index_tbl[start[i]:end[i],])
+  i = i + 1
+}
+
+
+
+
+index_tbl_cols %>% flextable::flextable() %>% set_header_labels(dummy = "Species") %>% set_header_labels(ft,
+  values = list(ROI_INDEX = "INDEX",
+                ROI_NAME = "ROI",
+                ROI_INDEX.1 = "INDEX",
+                ROI_NAME.1 = "ROI",
+                ROI_INDEX.2 = "INDEX",
+                ROI_NAME.2 = "ROI",
+                ROI_INDEX.3 = "INDEX",
+                ROI_NAME.3 = "ROI",
+                ROI_INDEX.4 = "INDEX",
+                ROI_NAME.4 = "ROI")) 
+
+
+```
+
+Which ROIs are in JLF parcellation but not in MUSE ROIs?
+
+```{r}
+isInMUSE = roi_df$X %in% s_dict$ROI_INDEX 
+roi_df[!isInMUSE,]
+```
+
+Which JLF ROIs are affected most by 10% GMD thresholding?
+
+```{r, results='html'}
+df_tmp = roi_df[order(roi_df$PROP_VOX_ABV10., roi_df$NVOX_ROI),]
+data.frame(ROI_NAME = s_dict$ROI_NAME[match(df_tmp$X, s_dict$ROI_INDEX)], df_tmp) %>% stargazer()
+```
+
+## Examining statistical significance across ROIs
+
+```{r}
+# Plot R=2 values
+p_df_long = p_df_r2 %>% pivot_longer(!METHOD, names_to = "ROI", values_to = "PROP. SIG. P-VALUES")
+
+prep_df = function(df, roi_group){
+  #' Make df into long format and sort ROI by Proportion P-values sum
+  df_long = df %>% pivot_longer(!METHOD, names_to = "ROI", values_to = "PROP. SIG. P-VALUES")
+  
+  df_roi = df_long[df_long$ROI %in% roi_class[[roi_group]],] 
+
+  x = aggregate(df_roi$`PROP. SIG. P-VALUES`, by=list(ROI = df_roi$ROI), FUN=sum)
+  roi_order = x$ROI[order(df_roi[df_roi$METHOD == "Raw", "PROP. SIG. P-VALUES"], decreasing = TRUE)]
+  df_roi$ROI = factor(df_roi$ROI, levels=roi_order)
+  
+  df_roi = cbind(ROI_GROUP = roi_group, df_roi)
+  return(df_roi)
+}
+
+plot_P_prop = function(df, title=NULL){
+   #' Quick plot
+  p = df %>% ggplot(aes(x=ROI, y=`PROP. SIG. P-VALUES`, fill=METHOD)) + geom_bar(position = 'dodge', stat = 'identity') + theme_classic() + scale_fill_calc() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  
+  if(!is.null(title)){
+    p = p + ggtitle(title) + theme(plot.title = element_text(hjust=0.5))
+  }
+  
+  return(p)
+}
+
+agg_plot_P_prop = function(df){
+   #' Quick plot
+  p = df %>% ggplot(aes(x=ROI, y=`PROP. SIG. P-VALUES`, fill=METHOD)) + geom_bar(position = 'dodge', stat = 'identity') + theme_classic() + scale_fill_calc() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=7)) + facet_wrap(~ROI_GROUP, scales='free')
+  
+  return(p)
+}
+
+```
+
+
+### R = 2
+
+```{r}
+roi_groups = names(roi_class)
+prepped_df_r2 = rbind.fill(lapply(roi_groups, function(x) prep_df(p_df_r2, x)))
+prepped_df_r2$ROI_GROUP = factor(prepped_df_r2$ROI_GROUP, levels=roi_groups)
+
+agg_plot_P_prop(prepped_df_r2)
+# ggsave("P-PROP_BARPLOT_R-2.png", dpi=300, width = 6, height = 5, units = 'in')
+```
+
+
+```{r}
+plots_r2 = lapply(roi_groups, function(x) prep_df(p_df_r2, x) %>% plot_P_prop(x))
+names(plots_r2) = roi_groups
+```
+
+#### Frontal
+```{r}
+plots_r2$Frontal
+```
+
+#### Occipital
+```{r}
+plots_r2$Occipital
+```
+
+#### Temporal
+
+```{r}
+plots_r2$Temporal
+```
+
+#### Parietal
+
+```{r}
+plots_r2$Parietal
+```
+
+#### Deep structures
+```{r}
+plots_r2$Deep
+```
+
+#### Limbic
+
+```{r}
+plots_r2$Limbic
+```
+
+### R = 3
+
+```{r}
+# Aggregate plots
+prepped_df_r3 = rbind.fill(lapply(roi_groups, function(x) prep_df(p_df_r3, x)))
+prepped_df_r3$ROI_GROUP = factor(prepped_df_r3$ROI_GROUP, levels=roi_groups)
+
+agg_plot_P_prop(prepped_df_r3)
+# ggsave("P-PROP_BARPLOT_R-3.png", dpi=300, width = 6, height = 5, units = 'in')
+```
+
+```{r}
+# Individual plots
+plots_r3 = lapply(roi_groups, function(x) prep_df(p_df_r3, x) %>% plot_P_prop(str_to_title(x)))
+names(plots_r3) = roi_groups
+```
+
+
+#### Frontal
+```{r}
+plots_r3$Frontal
+```
+
+#### Occipital
+
+```{r}
+plots_r3$Occipital
+```
+
+#### Temporal
+
+```{r}
+plots_r3$Temporal
+```
+
+#### Parietal
+
+```{r}
+plots_r3$Parietal
+```
+
+#### Deep structures
+```{r}
+plots_r3$Deep
+```
+
+#### Limbic
+
+```{r}
+plots_r3$Limbic
+```
+
+### R = 4
+
+```{r}
+# Aggregate plot
+prepped_df_r4 = rbind.fill(lapply(roi_groups, function(x) prep_df(p_df_r4, x)))
+prepped_df_r4$ROI_GROUP = factor(prepped_df_r4$ROI_GROUP, levels=roi_groups)
+
+agg_plot_P_prop(prepped_df_r4)
+# ggsave("P-PROP_BARPLOT_R-4.png", dpi=300, width = 6, height = 5, units = 'in')
+```
+
+```{r}
+# Individual plot
+plots_r4 = lapply(roi_groups, function(x) prep_df(p_df_r4, x) %>% plot_P_prop(str_to_title(x)))
+names(plots_r4) = roi_groups
+```
+
+#### Frontal
+```{r}
+plots_r4$Frontal
+```
+
+#### Occipital
+```{r}
+plots_r4$Occipital
+```
+
+#### Temporal
+
+```{r}
+plots_r4$Temporal
+```
+
+#### Parietal
+
+```{r}
+plots_r4$Parietal
+```
+
+#### Deep structures
+```{r}
+plots_r4$Deep
+```
+
+#### Limbic
+```{r}
+plots_r4$Limbic
+```
+
