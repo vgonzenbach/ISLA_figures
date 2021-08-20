@@ -33,29 +33,41 @@ library(flextable)
 library(hash)
 
 # Load data
-p_df = read.csv('results/frac_sigPs_by_ROI_adjBy10thr.csv')
-colnames(p_df)[1] = "METHOD"
+load_p_df = function(){
+  p_df = read.csv('results/frac_sigPs_by_ROI_adjBy10thr.csv')
+  colnames(p_df)[1] = "METHOD"
+  
+  # Separate first column
+  p_df$METHOD = c("Uncorrected", "ISLA_R2", "ISLA_R3", "ISLA_R4", "NWC_R2", "NWC_R3", "NWC_R4")
+  p_df = tidyr::separate(p_df, METHOD, into = c("method", "radius"), sep="_")
+  
+  # Prep method
+  p_df$method = factor(p_df$method, levels=unique(p_df$method))
+  
+  # Prep radius
+  p_df = p_df[rep(seq_len(nrow(p_df)), times = c(3,1,1,1,1,1,1)), ] # repeat Raw CBF 3 times to match
+  p_df[p_df$method == "Uncorrected", "radius"] = c("R2", "R3", "R4") # fill in radius info for Raw CBF
+  p_df$radius = factor(p_df$radius) %>% recode_factor(R2 = "R = 2", R3 = "R = 3", R4 = "R = 4") # recode for plotting
+  
+  return(p_df)
+}
 
-# Separate first column
-p_df$METHOD = c("Raw", "ISLA_R2", "ISLA_R3", "ISLA_R4", "Ahlgren_R2", "Ahlgren_R3", "Ahlgren_R4")
-p_df = tidyr::separate(p_df, METHOD, into = c("method", "radius"), sep="_")
+load_dict = function(){
+  
+  # Load ROI dictionary
+  dict = readxl::read_xlsx("data/MUSE_ROI_Dict.xlsx", 1)
+  s_dict = dict[dict$ROI_INDEX %in% 2:300, ]
+  s_dict$ROI_INDEX = paste0("X", s_dict$ROI_INDEX)
 
-# Prep method
-p_df$method = factor(p_df$method, levels=unique(p_df$method))
+  return(s_dict)
+}
 
-# Prep radius
-p_df = p_df[rep(seq_len(nrow(p_df)), times = c(3,1,1,1,1,1,1)), ] # repeat Raw CBF 3 times to match
-p_df[p_df$method == "Raw", "radius"] = c("R2", "R3", "R4") # fill in radius info for Raw CBF
-p_df$radius = factor(p_df$radius) %>% recode_factor(R2 = "R = 2", R3 = "R = 3", R4 = "R = 4") # recode for plotting
+p_df = load_p_df()
+s_dict = load_dict()
 
-# Load ROI dictionary
 thresh_df = read.csv('results/frac_within_threshold_voxels_by_ROI.csv')
-dict = readxl::read_xlsx("data/MUSE_ROI_Dict.xlsx", 1)
-s_dict = dict[dict$ROI_INDEX %in% 2:300, ]
-s_dict$ROI_INDEX = paste0("X", s_dict$ROI_INDEX)
-
-jlf_dict = read.csv("data/jlf_lookup.csv")
 roi_class = readRDS('roi_class.rds')
+
 
 # Split dataframe ROI class
 subset_roi_df = function(roi_df, roi_indexes){
@@ -63,21 +75,19 @@ subset_roi_df = function(roi_df, roi_indexes){
   return(roi_df)
 }
 
-get_roi_info = function(roi_index, info=c("name", "side", "tissue"), dict_type="MUSE"){
+get_roi_info = function(roi_index, info=c("name", "side", "tissue")){
   #' Given ROI index return its name 
-  
-  if(dict_type == "MUSE"){
-    roi_dict = s_dict
-    h = hash()
-    h[["name"]] = "ROI_NAME"
-    h[["side"]] = "HEMISPHERE"
-    h[["tissue"]] = "TISSUE_SEG"
+  if(is.null(s_dict)){
+    print("No dictionary in memory") 
+    return(NULL)
   }
-  
-  col = h[[info]]
-  rows = match(roi_index, roi_dict$ROI_INDEX)
-  roi_info = unname(unlist(roi_dict[rows, col]))
-  
+
+  cols = c("ROI_NAME", "HEMISPHERE", "TISSUE_SEG")
+  names(cols) = c("name", "side", "tissue")
+
+  col = cols[info]
+  rows = match(roi_index, s_dict$ROI_INDEX)
+  roi_info = unname(unlist(s_dict[rows, col]))
   return(roi_info)
 }
 ```
@@ -91,7 +101,7 @@ plot_regions = function(roi_df, title="", x_text_size=7){
   df_long = roi_df %>% pivot_longer(!c("method", "radius"), names_to = "ROI", values_to = "PROP. SIG. P-VALUES", names_ptypes = list(ROI = factor()))
   
   # Order ROIs by Raw CBF
-  roi_order = df_long$`PROP. SIG. P-VALUES`[df_long$method == "Raw" & df_long$radius == "R = 2"] %>% order(decreasing = TRUE)
+  roi_order = df_long$`PROP. SIG. P-VALUES`[df_long$method == "Uncorrected" & df_long$radius == "R = 2"] %>% order(decreasing = TRUE)
   df_long$ROI = factor(df_long$ROI, levels=levels(df_long$ROI)[roi_order])
   
   # Plot
@@ -152,4 +162,60 @@ p_df %>% subset_roi_df(roi_class[["Deep"]]) %>% plot_regions(title = "Deep", 9)
 p_df %>% subset_roi_df(roi_class[["Limbic"]]) %>% plot_regions(title = "Limbic", 9)
 ```
 
+## Tables: Examine ROIs
 
+Note: JLF parcellation consists of 135 labels while MUSE has 145 ROIs. TODO: Why is there a discrepancy?
+  
+  Which MUSE ROIs are not included in JLF parcellation? Most White Matter regions
+
+```{r, results='asis'}
+isInJLF = s_dict$ROI_INDEX %in% thresh_df$X
+
+isInMUSE = thresh_df$X %in% s_dict$ROI_INDEX 
+
+#jlf_dict$ROI_INDEX == readr::parse_number(thresh_df$X[!isInMUSE])
+#
+#isOnlyInJLF = jlf_dict$ROI_INDEX %in% readr::parse_number(thresh_df$X[!isInMUSE])
+#jlf_dict[isOnlyInJLF,] # TODO: Figure out what do with this
+
+index_tbl = s_dict[isInJLF, c("ROI_INDEX", "ROI_NAME")] 
+
+start = seq(1,130, by=26)
+end = start + 25
+
+index_tbl_cols = data.frame(index_tbl[start[1]:end[1],])
+for(i in 2:length(start)){
+  index_tbl_cols = data.frame(index_tbl_cols, index_tbl[start[i]:end[i],])
+  i = i + 1
+}
+
+index_tbl_cols %>% flextable::flextable() %>% set_header_labels(ft,
+                                                                values = list(ROI_INDEX = "INDEX",
+                                                                              ROI_NAME = "ROI",
+                                                                              ROI_INDEX.1 = "INDEX",
+                                                                              ROI_NAME.1 = "ROI",
+                                                                              ROI_INDEX.2 = "INDEX",
+                                                                              ROI_NAME.2 = "ROI",
+                                                                              ROI_INDEX.3 = "INDEX",
+                                                                              ROI_NAME.3 = "ROI",
+                                                                              ROI_INDEX.4 = "INDEX",
+                                                                              ROI_NAME.4 = "ROI")) 
+
+
+```
+
+Which ROIs are in JLF parcellation but not in MUSE ROIs?
+  
+```{r}
+isInMUSE = thresh_df$X %in% s_dict$ROI_INDEX 
+thresh_df[!isInMUSE,]
+```
+
+Which JLF ROIs are affected most by 10% GMD thresholding? (Pending)
+
+```{r, results='html'}
+df_tmp = thresh_df[order(thresh_df$PROP_VOX_ABV10., thresh_df$NVOX_ROI),]
+# data.frame(ROI_NAME = s_dict$ROI_NAME[match(df_tmp$X, s_dict$ROI_INDEX)], df_tmp) %>% stargazer()
+# TODO: Use flextable
+
+```

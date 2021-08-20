@@ -1,0 +1,59 @@
+---
+title: "boxplot_methods.Rmd"
+author: "Virgilio Gonzenbach"
+date: "8/20/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      cache=TRUE, 
+                      fig.width = 10, 
+                      fig.height = 7, 
+                      dpi=300)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+
+
+```{r load, include=FALSE}
+myPaths = c(.libPaths(), "/home/vgonzenb/R/x86_64-pc-linux-gnu-library/4.0")
+.libPaths(myPaths)
+library(tidyverse) #dplyr, ggplot2, tidyr
+library(reshape2)
+library(ggthemes)
+
+# Load data
+load_data = function(){
+  cbf_df = read.csv(file.path("data/avg_CBF_per_GMD.csv"), check.names = FALSE)[,-1]
+  cbf_df = cbf_df %>% mutate(METHOD = "Uncorrected") # indicate METHOD before merge
+
+  ahlgren_df = read.csv(file.path("data/avg_Ahlgren_per_GMD.csv"), check.names = FALSE)[,-1]
+  ahlgren_df = ahlgren_df %>% mutate(METHOD = "NWC")
+
+  isla_df = read.csv(file.path("data/avg_ISLA_per_GMD.csv"), check.names = FALSE)[,-1]
+  isla_df = isla_df %>% mutate(METHOD = "ISLA")
+
+  # Merge dataframes
+  df = rbind(cbf_df, ahlgren_df, isla_df)
+  df$METHOD = factor(df$METHOD, levels=unique(df$METHOD))
+  return(df)
+}
+
+df = load_data()
+
+```
+
+## Boxplot
+
+```{r boxplot}
+# Plot Boxplot
+df %>% pivot_longer(cols = c(-subjectID, -METHOD), names_to = "GMD_RANGE") %>% 
+  ggplot(aes(x=GMD_RANGE, y=value, color = METHOD, order= )) + 
+  geom_boxplot(position = position_dodge(width = 0.9)) + ylab("AVERAGE CBF") + xlab("GMD RANGE") + 
+  stat_summary(fun=mean, geom="line", 
+               aes(group = METHOD, color = METHOD),
+               position = position_dodge(width = 0.9)) +
+  theme_classic() + scale_color_calc()
+```
+
