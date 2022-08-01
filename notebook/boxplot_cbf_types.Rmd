@@ -7,7 +7,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, 
+                      warning=FALSE,
                       cache= TRUE, 
+                      cache.path='cache/',
+                      fig.path=here::here('results/figures/boxplot_cbf/'),
                       fig.width = 10, 
                       fig.height = 7, 
                       dpi=300)

@@ -1,22 +1,24 @@
 """Create DataFrame with average CBF values per GMD threshold for plotting"""
+import os
 import nibabel as nib
 import numpy as np
 import pandas as pd
 
-PROJECT_ROOT = "/home/vgonzenb/ISLA/"
-PNC_TEMPLATE = PROJECT_ROOT + 'data/templates/pnc_template_brain_2mm.nii.gz'
+PROJECT_ROOT = os.path.join(os.path.dirname(__file__),'..')
+os.chdir(PROJECT_ROOT)
+PNC_TEMPLATE = 'data/templates/pnc_template_brain_2mm.nii.gz'
 subject_list = list(pd.read_csv("/project/kristin_imco/subject_lists/n1132_linnCoupling_ltnT1AslVox_subjects.csv")["scanid"])
 
 def load_images(subjectID, size):
-    """Returns a hierarchical dictionary containing CBF and GMD images for a given subject and size"""
+    """Returns a hierarchical dictionary containing CBF and GMD arrays from images for a given subject and size"""
 
     images = {}
     images['subjectID'] = subjectID
-    images['gmd'] = nib.load(f"/project/pnc/n1601_dataFreeze2016/neuroimaging/t1struct/voxelwiseMaps_gmd/{subjectID}_atropos3class_prob02SubjToTemp2mm.nii.gz")
+    images['gmd'] = nib.load(f"/project/pnc/n1601_dataFreeze2016/neuroimaging/t1struct/voxelwiseMaps_gmd/{subjectID}_atropos3class_prob02SubjToTemp2mm.nii.gz").get_fdata()
     images['cbf'] = {}
-    images['cbf']['Raw'] = nib.load(f'/project/pnc/n1601_dataFreeze2016/neuroimaging/asl/voxelwiseMaps_cbf/{subjectID}_asl_quant_ssT1Std.nii.gz')
-    images['cbf']['ISLA'] = nib.load(f'/project/kristin_imco/coupling_maps_gm10/gmd_cbf_size{size}/{subjectID}/predictedGMD1.nii.gz')
-    images['cbf']['Ahlgren'] =  nib.load(f'/project/kristin_imco/coupling_ahlgren_gm10/gmd_cbf_size{size}/{subjectID}/beta_gmd.nii.gz')
+    images['cbf']['Raw'] = nib.load(f'/project/pnc/n1601_dataFreeze2016/neuroimaging/asl/voxelwiseMaps_cbf/{subjectID}_asl_quant_ssT1Std.nii.gz').get_fdata()
+    images['cbf']['ISLA'] = nib.load(f'/project/kristin_imco/coupling_maps_gm10/gmd_cbf_size{size}/{subjectID}/predictedGMD1.nii.gz').get_fdata()
+    images['cbf']['Ahlgren'] =  nib.load(f'/project/kristin_imco/coupling_ahlgren_gm10/gmd_cbf_size{size}/{subjectID}/beta_gmd.nii.gz').get_fdata()
 
     return(images)
 
@@ -26,7 +28,7 @@ def threshold_cbf(images):
     def make_gmd_masks(images):
         """Return DataFrame where rows represent avg values in GMD threshold for all three CBF types"""
     
-        gmd_arr = images['gmd'].get_fdata()
+        gmd_arr = images['gmd']
         lower_thr = np.linspace(0.1, 0.9, 9)
         upper_thr = lower_thr + .1
 
@@ -42,7 +44,7 @@ def threshold_cbf(images):
     for cbf_type in images['cbf']:
         row = [images['subjectID'], cbf_type]
 
-        pre_cbf_arr = images['cbf'][cbf_type].get_fdata()
+        pre_cbf_arr = images['cbf'][cbf_type]
         cbf_arr = np.squeeze(np.where(pre_cbf_arr > 0, pre_cbf_arr, np.nan)) # take care of faulty negative values
         avg_cbf_values = [np.nanmean(cbf_arr * mask) for mask in masks]
         row.extend(avg_cbf_values)
@@ -68,10 +70,16 @@ def make_avg_cbf_df(size):
 
     # return(list4df)
 
-radius_sizes = [2, 3, 4]
-for size in radius_sizes:
-    cbf_df = make_avg_cbf_df(size)
-    cbf_df.to_csv(PROJECT_ROOT + f'data/avg_cbf_vals_by_GMD_size-{size}.csv', index_label=False)
+if __name__ == '__main__':
+    outdir = 'results/tables'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    for r_size in 2, 3, 4: # Radius sizes
+        cbf_df = make_avg_cbf_df(r_size)
+        outpath = os.path.join(outdir, f'avg_cbf_vals_by_GMD_size-{r_size}.csv')
+        cbf_df.to_csv(outpath, index=False)
+
 
 
 
