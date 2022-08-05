@@ -1,18 +1,18 @@
 """ Calculate Proportion of signifiscant voxels within ROIs for CBF methods"""
-
+import os
 import nibabel as nib
 import numpy as np
 import pandas as pd
 from multitest_nifti import * # custom script
 
-PROJECT_ROOT = "/home/vgonzenb/ISLA/"
-JLF_DIR = "/project/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/"
-roi_labels_path = JLF_DIR + "pncTemplateJLF_Labels2mm.nii.gz"
-roi_dict_path = JLF_DIR + "jlf_lookup.csv"
+PROJECT_ROOT = os.path.join(os.path.dirname(__file__),'..')
+os.chdir(PROJECT_ROOT)
+JLF_DIR = "/project/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf"
+roi_dict_path = os.path.join(JLF_DIR, "jlf_lookup.csv")
 
-roi_labels_img = nib.load(roi_labels_path)
-roi_labels_arr = roi_labels_img.get_fdata()
-roi_indexes = np.unique(roi_labels_img.get_fdata())[1:]
+roi_labels_path = os.path.join(JLF_DIR, "pncTemplateJLF_Labels2mm.nii.gz")
+roi_labels = nib.load(roi_labels_path).get_fdata()
+roi_indexes = np.unique(roi_labels)[1:]
 
 p_thresh = 0.05
 
@@ -35,7 +35,7 @@ def add_img_row(method_key, adj4thresh=False):
 
     p_propor = []
     for roi_index in roi_indexes:
-        roi_mask  = roi_labels_arr == roi_index
+        roi_mask  = roi_labels == roi_index
         if(adj4thresh): # apply mask to the roi mask
             roi_mask = roi_mask * thresh_mask
         nvox_roi = np.sum(roi_mask)
@@ -46,10 +46,13 @@ def add_img_row(method_key, adj4thresh=False):
 
     return p_propor
 
-df = make_df()
-for method in cbf_methods:
-    df.loc[method] = add_img_row(method)
-
-df_adj = make_df()
-for method in cbf_methods:
-    df_adj.loc[method] = add_img_row(method, adj4thresh=True)
+if __name__ == '__main__':
+    df = make_df()
+    for adj in False, True:
+        df = make_df()
+        for method in cbf_methods:
+            df.loc[method] = add_img_row(method)
+        
+        
+        outname = f"results/data/prop_sigPs_by_ROI{'adjBy10thr' if adj else ''}.csv"
+        df.to_csv(outname)

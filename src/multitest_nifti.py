@@ -5,20 +5,21 @@ import numpy as np
 from statsmodels.stats.multitest import multipletests
 
 # Set up
-PROJECT_ROOT = "/home/vgonzenb/ISLA/"
-mask = nib.load(PROJECT_ROOT + "data/templates/pnc_template_brain_mask_2mm.nii.gz")
+PROJECT_ROOT = os.path.join(os.path.dirname(__file__),'..')
+mask_path = os.path.join('/project/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/pnc_template_brain_mask_2mm.nii.gz')
+mask = nib.load(mask_path)
 
 cbf_methods =  {'orig': "orig_cbf_th10",
-                    'isla_r2': "isla_cbf_r2_th10", 
-                    'isla_r3': "isla_cbf_r3_th10", 
-                    'isla_r4': "isla_cbf_r4_th10", 
-                    'ahlgren_r2': "ahlgren_cbf_r2_th10", 
-                    'ahlgren_r3': "ahlgren_cbf_r3_th10", 
-                    'ahlgren_r4': "ahlgren_cbf_r4_th10"
-                    }
+                'isla_r2': "isla_cbf_r2_th10", 
+                'isla_r3': "isla_cbf_r3_th10", 
+                'isla_r4': "isla_cbf_r4_th10", 
+                'ahlgren_r2': "ahlgren_cbf_r2_th10", 
+                'ahlgren_r3': "ahlgren_cbf_r3_th10", 
+                'ahlgren_r4': "ahlgren_cbf_r4_th10"
+                }
 def find_cbf_path(img_key):
     """Find image path per dict key"""
-    filepath = PROJECT_ROOT + f"data/stats/{cbf_methods[img_key]}/_vox_p_fstat1.nii.gz"
+    filepath = f"/project/kristin_imco/flameo_final/cbf/nogmd/{cbf_methods[img_key]}/randomize/_vox_p_fstat1.nii.gz"
     return(filepath)
 
 def multipletests_mod(p_values, ret=1, **kwargs):
