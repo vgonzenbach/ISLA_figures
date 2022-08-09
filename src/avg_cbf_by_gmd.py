@@ -71,7 +71,7 @@ def make_avg_cbf_df(size):
     # return(list4df)
 
 if __name__ == '__main__':
-    outdir = 'results/tables'
+    outdir = 'results/data'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 

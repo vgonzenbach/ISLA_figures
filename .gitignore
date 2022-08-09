@@ -1,4 +1,8 @@
 docs/
+dump/
 src/bbl/
 tmp/
-.Rproj.user
+.R*
+.vscode
+data/*
+*cache*

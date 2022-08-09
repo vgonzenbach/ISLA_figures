@@ -1,27 +1,26 @@
 """For each ROI, calculate proportion of ROI voxels remaining after 10% GMD thresholding"""
-
+import os
 import nibabel as nib
 import numpy as np
 import pandas as pd # custom script
 
-PROJECT_ROOT = "/home/vgonzenb/ISLA/"
-JLF_DIR = "/project/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/"
-roi_labels_path = JLF_DIR + "pncTemplateJLF_Labels2mm.nii.gz"
-roi_dict_path = JLF_DIR + "jlf_lookup.csv"
+PROJECT_ROOT = os.path.join(os.path.dirname(__file__),'..')
+os.chdir(PROJECT_ROOT)
+JLF_DIR = "/project/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf"
+roi_labels_path = os.path.join(JLF_DIR, "pncTemplateJLF_Labels2mm.nii.gz")
+roi_dict_path = os.path.join(JLF_DIR, "jlf_lookup.csv")
 
-roi_labels_img = nib.load(roi_labels_path)
-roi_labels_arr = roi_labels_img.get_fdata()
-roi_indexes = np.unique(roi_labels_img.get_fdata())[1:]
+roi_labels = nib.load(roi_labels_path).get_fdata()
+roi_indexes = np.unique(roi_labels)[1:]
 
-gmd_path = PROJECT_ROOT + 'data/mri/avgGMD_CBF_thr10.nii.gz'
-gmd_img = nib.load(gmd_path)
-gmd_arr = gmd_img.get_fdata()
+gmd_path = '/project/kristin_imco/avg_images/avgGMD_CBF_thr10.nii.gz'
+gmd_arr = nib.load(gmd_path).get_fdata()
 
 def thresh_rois():
     """Returns proportions of within-threshold voxels for each ROI"""
     inVox_propor = []
     for roi_index in roi_indexes:
-        roi_mask  = roi_labels_arr == roi_index
+        roi_mask  = roi_labels == roi_index
         nvox_roi = np.sum(roi_mask)
 
         isInThresh = np.where(roi_mask, gmd_arr > .1, 0)
