@@ -34,22 +34,21 @@ library(gridExtra)
 library(stargazer)
 library(flextable)
 library(hash)
-
 # Load data
 load_p_df = function(){
-  p_df = read.csv('results/data/prop_sigPs_by_ROIadjBy10thr.csv')
+  p_df = read.csv(here::here('results/data/prop_sigPs_by_ROIadjBy10thr.csv'))
   colnames(p_df)[1] = "METHOD"
   
   # Separate first column
-  p_df$METHOD = c("Uncorrected", "ISLA_R2", "ISLA_R3", "ISLA_R4", "NWC_R2", "NWC_R3", "NWC_R4")
+  p_df$METHOD = c("Uncorrected", "ISLA_R2", "ISLA_R3", "ISLA_R4", "NWC_R2", "NWC_R3", "NWC_R4", "BASIL")
   p_df = tidyr::separate(p_df, METHOD, into = c("method", "radius"), sep="_")
   
   # Prep method
   p_df$method = factor(p_df$method, levels=unique(p_df$method))
   
   # Prep radius
-  p_df = p_df[rep(seq_len(nrow(p_df)), times = c(3,1,1,1,1,1,1)), ] # repeat Raw CBF 3 times to match
-  p_df[p_df$method == "Uncorrected", "radius"] = c("R2", "R3", "R4") # fill in radius info for Raw CBF
+  p_df = p_df[rep(seq_len(nrow(p_df)), times = c(3,1,1,1,1,1,1,3)), ] # repeat Raw CBF 3 times to match
+  p_df[p_df$method %in% c("Uncorrected", "BASIL"), "radius"] = c("R2", "R3", "R4") # fill in radius info for Raw CBF
   p_df$radius = factor(p_df$radius) %>% recode_factor(R2 = "R = 2", R3 = "R = 3", R4 = "R = 4") # recode for plotting
   
   return(p_df)
@@ -58,7 +57,7 @@ load_p_df = function(){
 load_dict = function(){
   
   # Load ROI dictionary
-  dict = readxl::read_xlsx("data/MUSE_ROI_Dict.xlsx", 1)
+  dict = readxl::read_xlsx(here::here("data/MUSE_ROI_Dict.xlsx"), 1)
   s_dict = dict[dict$ROI_INDEX %in% 2:300, ]
   s_dict$ROI_INDEX = paste0("X", s_dict$ROI_INDEX)
 
@@ -68,7 +67,7 @@ load_dict = function(){
 p_df = load_p_df()
 s_dict = load_dict()
 
-thresh_df = read.csv('results/frac_within_threshold_voxels_by_ROI.csv')
+thresh_df = read.csv(here::here('results/frac_within_threshold_voxels_by_ROI.csv'))
 temporal = c(123, 122, 133, 155, 201, 203, 132, 154, 200, 202, 181, 185, 207, 180, 184, 206, 88, 87)
 parietal = c(107, 177, 195, 199, 106, 176, 194, 198, 149, 169, 148, 168, 86, 85)
 occipital = c(161, 160, 129, 145, 157, 197, 128, 144, 156, 196, 109, 115, 135, 108, 114, 134, 84, 83)

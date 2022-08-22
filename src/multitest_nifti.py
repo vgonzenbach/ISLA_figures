@@ -15,7 +15,8 @@ cbf_methods =  {'orig': "orig_cbf_th10",
                 'isla_r4': "isla_cbf_r4_th10", 
                 'ahlgren_r2': "ahlgren_cbf_r2_th10", 
                 'ahlgren_r3': "ahlgren_cbf_r3_th10", 
-                'ahlgren_r4': "ahlgren_cbf_r4_th10"
+                'ahlgren_r4': "ahlgren_cbf_r4_th10",
+                'basil': "basil_cbf_th10"
                 }
 def find_cbf_path(img_key):
     """Find image path per dict key"""
