@@ -18,7 +18,11 @@ def load_images(subjectID, size):
     images['cbf'] = {}
     images['cbf']['Raw'] = nib.load(f'/project/pnc/n1601_dataFreeze2016/neuroimaging/asl/voxelwiseMaps_cbf/{subjectID}_asl_quant_ssT1Std.nii.gz').get_fdata()
     images['cbf']['ISLA'] = nib.load(f'/project/kristin_imco/coupling_maps_gm10/gmd_cbf_size{size}/{subjectID}/predictedGMD1.nii.gz').get_fdata()
-    images['cbf']['Ahlgren'] =  nib.load(f'/project/kristin_imco/coupling_ahlgren_gm10/gmd_cbf_size{size}/{subjectID}/beta_gmd.nii.gz').get_fdata()
+    images['cbf']['Ahlgren'] = nib.load(f'/project/kristin_imco/coupling_ahlgren_gm10/gmd_cbf_size{size}/{subjectID}/beta_gmd.nii.gz').get_fdata()
+    try: 
+        images['cbf']['BASIL'] = nib.load(f'/project/pnc/basilPNC_scanid/{subjectID}_basil.nii.gz').get_fdata()
+    except FileNotFoundError:
+        images['cbf']['BASIL'] = np.nan
 
     return(images)
 
