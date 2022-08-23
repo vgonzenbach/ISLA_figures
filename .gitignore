@@ -6,3 +6,4 @@ tmp/
 .vscode
 data/*
 *cache*
+.Rproj.user
