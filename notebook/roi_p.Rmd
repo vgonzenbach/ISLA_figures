@@ -155,6 +155,39 @@ plot_regions = function(roi_df, title="", x_text_size=7){
 }
 ```
 
+### Select ROIs
+
+```{r}
+# selected ROIS in meeting with Kristin 10/13/22
+selected_rois = c('X56', 'X58', 'X32', 'X48', # deep
+                  'X103', 'X143', 'X187', # frontal
+                  'X101', 'X139', # limbic
+                  'X145', 'X115', # occipital
+                  'X169', 'X149', # parietal
+                  'X201', 'X207' # temporal
+                  )
+roi_df = p_df %>% 
+  pivot_longer(-c(method, radius), names_to='ROI_INDEX', values_to = 'PROP. SIG. P-VALUES') %>% 
+  filter(ROI_INDEX %in% selected_rois) %>% 
+  left_join(s_dict %>% select(ROI_INDEX, ROI_NAME), by = 'ROI_INDEX') %>% 
+  mutate(ROI_NAME = ROI_NAME %>% stringr::str_replace_all('Left', 'L.') %>% 
+           str_replace_all('Cun|MOG|ACgG|SCA|MCgG|MPoG|STG|AIns|MFG|PCu|TTG', '') %>% 
+           str_squish() %>% 
+           str_to_title())
+
+roi_df %>% 
+  ggplot(aes(x=ROI_NAME, y=`PROP. SIG. P-VALUES`, fill=method)) + 
+  geom_bar(position = position_dodge(-.9), stat='identity') + 
+  scale_fill_calc(name = "Method") +
+  facet_wrap(~radius) + 
+  coord_flip() + 
+  xlab('ROI') +
+  ylab('Proportion Sig. P-values') + 
+  theme_bw() 
+
+
+```
+
 ### Frontal (Left)
 
 ```{r frontal_l_plot}
@@ -163,44 +196,44 @@ frontal_side = get_roi_info(roi_class$Frontal, "side")
 # Add new ROI class to roi_class list of indexes
 roi_class[["Frontal L"]] = roi_class$Frontal[frontal_side == "Left"]
 
-p_df %>% subset_roi_df(roi_class[["Frontal L"]]) %>% plot_regions(title = "Frontal (Left)", x_text_size = 8)
+p_df %>% subset_roi_df(roi_class[["Frontal L"]]) %>% plot_regions(title = "Frontal (Left)", x_text_size = 8) + coord_flip()
 ```
 
 ### Frontal (Right)
 
 ```{r frontal_r_plot}
 roi_class[["Frontal R"]] = roi_class$Frontal[frontal_side == "Right"]
-p_df %>% subset_roi_df(roi_class[["Frontal R"]]) %>% plot_regions(title = "Frontal (Right)", x_text_size = 8)
+p_df %>% subset_roi_df(roi_class[["Frontal R"]]) %>% plot_regions(title = "Frontal (Right)", x_text_size = 8) + coord_flip()
 ```
 
 ### Temporal
 
 ```{r temporal_plot}
-p_df %>% subset_roi_df(roi_class[["Temporal"]]) %>% plot_regions(title = "Temporal", x_text_size = 9)
+p_df %>% subset_roi_df(roi_class[["Temporal"]]) %>% plot_regions(title = "Temporal", x_text_size = 9) + coord_flip()
 ```
 
 ### Parietal
 
 ```{r parietal_plot}
-p_df %>% subset_roi_df(roi_class[["Parietal"]]) %>% plot_regions(title = "Parietal", x_text_size = 9)
+p_df %>% subset_roi_df(roi_class[["Parietal"]]) %>% plot_regions(title = "Parietal", x_text_size = 9) + coord_flip()
 ```
 
 ### Occipital
 
 ```{r occipital_plot}
-p_df %>% subset_roi_df(roi_class[["Occipital"]]) %>% plot_regions(title = "Occipital", 9)
+p_df %>% subset_roi_df(roi_class[["Occipital"]]) %>% plot_regions(title = "Occipital", 9) + coord_flip()
 ```
 
 ### Deep
 
 ```{r deep_plot}
-p_df %>% subset_roi_df(roi_class[["Deep"]]) %>% plot_regions(title = "Deep", 9)
+p_df %>% subset_roi_df(roi_class[["Deep"]]) %>% plot_regions(title = "Deep", 9) + coord_flip()
 ```
 
 ### Limbic
 
 ```{r limbic_plot}
-p_df %>% subset_roi_df(roi_class[["Limbic"]]) %>% plot_regions(title = "Limbic", 9)
+p_df %>% subset_roi_df(roi_class[["Limbic"]]) %>% plot_regions(title = "Limbic", 9) + coord_flip()
 ```
 
 ## Tables: Examine ROIs
