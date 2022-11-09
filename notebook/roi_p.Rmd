@@ -157,7 +157,7 @@ plot_regions = function(roi_df, title="", x_text_size=7){
 
 ### Select ROIs
 
-```{r}
+```{r roi_barplot_final}
 # selected ROIS in meeting with Kristin 10/13/22
 selected_rois = c('X56', 'X58', 'X32', 'X48', # deep
                   'X103', 'X143', 'X187', # frontal
@@ -166,26 +166,48 @@ selected_rois = c('X56', 'X58', 'X32', 'X48', # deep
                   'X169', 'X149', # parietal
                   'X201', 'X207' # temporal
                   )
+
+# Prepare data.frame
 roi_df = p_df %>% 
   pivot_longer(-c(method, radius), names_to='ROI_INDEX', values_to = 'PROP. SIG. P-VALUES') %>% 
   filter(ROI_INDEX %in% selected_rois) %>% 
-  left_join(s_dict %>% select(ROI_INDEX, ROI_NAME), by = 'ROI_INDEX') %>% 
+  left_join(s_dict, by = 'ROI_INDEX') %>% 
   mutate(ROI_NAME = ROI_NAME %>% stringr::str_replace_all('Left', 'L.') %>% 
            str_replace_all('Cun|MOG|ACgG|SCA|MCgG|MPoG|STG|AIns|MFG|PCu|TTG', '') %>% 
            str_squish() %>% 
-           str_to_title())
+           str_to_title() %>% 
+           as.factor(),
+         REGION = as.factor(REGION))
+
+# find order of factors for plotting
+roi_order = roi_df %>% 
+  filter(method  == 'Uncorrected', radius == 'R = 2') %>% 
+  group_by(REGION) %>% 
+  arrange(desc(`PROP. SIG. P-VALUES`), .by_group = TRUE) %>% 
+  select(ROI_NAME) %>%
+    ungroup() %>% 
+    pull() %>% 
+    as.character()
 
 roi_df %>% 
+  mutate(ROI_NAME = factor(ROI_NAME, levels=roi_order)) %>% # re-order factors for plotting
   ggplot(aes(x=ROI_NAME, y=`PROP. SIG. P-VALUES`, fill=method)) + 
   geom_bar(position = position_dodge(-.9), stat='identity') + 
-  scale_fill_calc(name = "Method") +
-  facet_wrap(~radius) + 
+  facet_grid(REGION~radius, scales = 'free', space = "free") + 
   coord_flip() + 
+  scale_fill_calc(name = "Method") +
   xlab('ROI') +
   ylab('Proportion Sig. P-values') + 
-  theme_bw() 
+  theme_bw() + 
+  theme(strip.background = element_rect(color="gray", fill="white", size=1.5, linetype="solid"))
+```
 
 
+
+```{r}
+roi_df = read.csv(here::here('results/data/roi_gmd.csv')) %>% 
+  rename(ROI_INDEX = X) %>% 
+  right_join(roi_df, by = 'ROI_INDEX')
 ```
 
 ### Frontal (Left)
