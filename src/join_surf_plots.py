@@ -10,8 +10,8 @@ def join_surf_plots(r, figpaths):
         img = Image.open(figpath)
         draw = ImageDraw.Draw(img)
         # font = ImageFont.truetype(<font-file>, <font-size>)
-        font = ImageFont.truetype("/Library/Fonts/Arial Unicode.ttf", 50)
-        font_BOLD = ImageFont.truetype("/Library/Fonts/Arial Unicode.ttf", 100)
+        font = ImageFont.truetype("ArialUnicode.ttf", 50)
+        font_BOLD = ImageFont.truetype("ArialUnicode.ttf", 100)
 
         # draw.text((x, y),"Sample Text",(r,g,b))
         # Draw Lefts and right
